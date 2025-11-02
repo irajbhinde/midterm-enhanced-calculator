@@ -17,13 +17,25 @@ def colorize(text: str, color: str) -> str:
     return f"{mapping.get(color, Fore.WHITE)}{text}{Style.RESET_ALL}"
 
 def init_logging(cfg) -> None:
+    import logging, os
     os.makedirs(cfg.log_dir, exist_ok=True)
     log_path = os.path.join(cfg.log_dir, cfg.log_file)
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s [%(levelname)s] %(message)s',
-        handlers=[logging.FileHandler(log_path, encoding=cfg.encoding), logging.StreamHandler()],
-    )
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    logger.handlers.clear()  # avoid duplicate handlers on repeated runs
+
+    # File logs (keep timestamps + levels)
+    file_handler = logging.FileHandler(log_path, encoding=cfg.encoding)
+    file_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+
+    # Console logs (clean output, no timestamp/level)
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(logging.Formatter("%(message)s"))
+
+    logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
+
     logging.info("Logger initialized.")
 
 class Observer:
