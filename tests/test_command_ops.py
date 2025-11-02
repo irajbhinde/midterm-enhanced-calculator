@@ -1,10 +1,19 @@
+# tests/test_command_ops.py
+import re
 import pytest
+from pathlib import Path
+
 from app.calculator import Calculator
 from app.calculator_config import AppConfig
 from app.command import OperationCommand
-from app.exceptions import ValidationError
 
-def _cfg(tmp_path):
+ANSI = re.compile(r"\x1b\[[0-9;]*m")
+
+def _no_ansi(s: str) -> str:
+    """Remove ANSI escape codes so assertions work in both CI and local terminals."""
+    return ANSI.sub("", s)
+
+def _cfg(tmp_path: Path) -> AppConfig:
     cfg = AppConfig.load()
     cfg.log_dir = str(tmp_path / "logs")
     cfg.history_dir = str(tmp_path / "hist")
@@ -13,11 +22,14 @@ def _cfg(tmp_path):
     cfg.ensure_dirs()
     return cfg
 
-@pytest.mark.parametrize("op,a,b,contains", [
-    ("add", 2, 3, "add(2.0, 3.0) = 5.0"),
-    ("percent", 5, 20, "percent(5.0, 20.0) = 25.0"),
-    ("abs_diff", -5, 2, "abs_diff(-5.0, 2.0) = 7.0"),
-])
+@pytest.mark.parametrize(
+    "op,a,b,contains",
+    [
+        ("add", 2, 3, "add(2.0, 3.0) = 5.0"),
+        ("percent", 5, 20, "percent(5.0, 20.0) = 25.0"),
+        ("abs_diff", -5, 2, "abs_diff(-5.0, 2.0) = 7.0"),
+    ],
+)
 def test_operation_command_success(tmp_path, op, a, b, contains):
     c = Calculator(config=_cfg(tmp_path))
     cmd = OperationCommand(op, c.compute)
@@ -27,7 +39,6 @@ def test_operation_command_success(tmp_path, op, a, b, contains):
 def test_operation_command_validation_error(tmp_path):
     c = Calculator(config=_cfg(tmp_path))
     cmd = OperationCommand("add", c.compute)
-    out = cmd.execute(["add", "not_a_number", "3"])
     out = cmd.execute(["add", "not_a_number", "3"])
     assert "Invalid number" in _no_ansi(out)
 
