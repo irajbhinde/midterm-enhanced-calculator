@@ -1,92 +1,90 @@
+# app/__init__.py
 from .calculator import Calculator
 from .calculator_config import AppConfig
-from .input_validators import parse_two_numbers, ValidationError
-from .exceptions import OperationError, HistoryError, PersistenceError
+from .exceptions import HistoryError, PersistenceError, OperationError, ValidationError
 from .logger import init_logging, colorize, LoggingObserver, AutoSaveObserver
+from .help import BaseHelp, OperationListHelp
+from .command import (
+    CommandRegistry, OperationCommand, UndoCommand, RedoCommand,
+    HistoryCommand, ClearCommand, SaveCommand, LoadCommand
+)
 from colorama import init as colorama_init
-import sys
+
 
 def main():
+    # Git Bash (mintty) supports ANSI; do not strip/convert.
     colorama_init(autoreset=True, strip=False, convert=False)
+
     cfg = AppConfig.load()
     init_logging(cfg)
     calc = Calculator(config=cfg)
 
-    # Register observers
+    # Observers
     calc.register_observer(LoggingObserver(cfg))
     if cfg.auto_save:
         calc.register_observer(AutoSaveObserver(cfg))
 
-    print(colorize("Advanced Calculator REPL. Type 'help' for commands.", 'cyan'))
+    # ---- Command registry ----
+    registry = CommandRegistry()
+
+    # Dynamically register all operations from the Factory
+    from .operations import OperationFactory
+    for op_name in OperationFactory._registry.keys():
+        registry.register(op_name, OperationCommand(op_name, calc.compute))
+
+    # Utility commands
+    registry.register("undo", UndoCommand(calc.undo))
+    registry.register("redo", RedoCommand(calc.redo))
+    registry.register(
+        "history",
+        HistoryCommand(
+            lambda: [
+                f"{idx+1}. {item.operation}({float(item.a)}, {float(item.b)}) = {item.result} @ {item.timestamp}"
+                for idx, item in enumerate(calc.history.items[: calc.history._cursor + 1])
+            ]
+        ),
+    )
+    registry.register("clear", ClearCommand(calc.clear_history))
+    registry.register("save", SaveCommand(calc.save_history))
+    registry.register("load", LoadCommand(calc.load_history))
+
+    # ---- Decorated Help (auto-updates when operations change) ----
+    help_view = OperationListHelp(BaseHelp())
+
+    print(colorize("Advanced Calculator REPL. Type 'help' for commands.", "cyan"))
     while True:
         try:
-            raw = input(colorize("> ", 'yellow')).strip()
+            raw = input(colorize("> ", "yellow")).strip()
         except (EOFError, KeyboardInterrupt):
             print()
-            print(colorize("Exiting. Bye!", 'cyan'))
+            print(colorize("Exiting. Bye!", "cyan"))
             break
+
         if not raw:
             continue
+
         parts = raw.split()
         cmd = parts[0].lower()
 
-        if cmd in {'exit', 'quit'}:
-            print(colorize("Exiting. Bye!", 'cyan'))
+        # Exit
+        if cmd in {"exit", "quit"}:
+            print(colorize("Exiting. Bye!", "cyan"))
             break
-        elif cmd == 'help':
-            print(colorize("Commands:", 'cyan'))
-            print(" add|subtract|multiply|divide|power|root|modulus|int_divide|percent|abs_diff a b")
-            print(" history | clear | undo | redo | save | load | help | exit")
-            continue
-        elif cmd == 'history':
-            for idx, item in enumerate(calc.history.items):
-                print(f"{idx+1}. {item.operation}({item.a}, {item.b}) = {item.result} @ {item.timestamp}" )
-            continue
-        elif cmd == 'clear':
-            calc.clear_history()
-            print(colorize("History cleared.", 'green'))
-            continue
-        elif cmd == 'undo':
-            try:
-                calc.undo()
-                print(colorize("Undo completed.", 'green'))
-            except HistoryError as e:
-                print(colorize(str(e), 'red'))
-            continue
-        elif cmd == 'redo':
-            try:
-                calc.redo()
-                print(colorize("Redo completed.", 'green'))
-            except HistoryError as e:
-                print(colorize(str(e), 'red'))
-            continue
-        elif cmd == 'save':
-            try:
-                calc.save_history()
-                print(colorize("History saved.", 'green'))
-            except PersistenceError as e:
-                print(colorize(str(e), 'red'))
-            continue
-        elif cmd == 'load':
-            try:
-                calc.load_history()
-                print(colorize("History loaded.", 'green'))
-            except PersistenceError as e:
-                print(colorize(str(e), 'red'))
+
+        # Help
+        if cmd == "help":
+            print(help_view.render())
             continue
 
-        # operations expecting two numbers
-        if cmd in {'add','subtract','multiply','divide','power','root','modulus','int_divide','percent','abs_diff'}:
-            try:
-                a, b = parse_two_numbers(parts[1:])
-                result = calc.compute(cmd, a, b)
-                print(colorize(f"{cmd}({a}, {b}) = {result}", 'green'))
-            except (ValidationError, OperationError) as e:
-                print(colorize(str(e), 'red'))
-            except IndexError:
-                print(colorize("Usage: <operation> a b", 'red'))
+        # Dispatch to command
+        command = registry.get(cmd)
+        if command:
+            out = command.execute(parts)
+            if out:
+                print(out)
         else:
-            print(colorize(f"Unknown command: {cmd}", 'red'))
+            print(colorize(f"Unknown command: {cmd}", "red"))
 
-if __name__ == '__main__':  # pragma: no cover
+
+if __name__ == "__main__":  # pragma: no cover
     main()  # pragma: no cover
