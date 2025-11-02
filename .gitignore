@@ -1,0 +1,26 @@
+# venv / Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pkl
+.pytest_cache/
+.dist-info/
+
+# coverage / test artefacts
+.coverage
+htmlcov/
+.tox/
+
+# data & logs
+logs/
+history/
+*.log
+*.csv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
