@@ -1,0 +1,49 @@
+import logging
+import os
+from dataclasses import dataclass
+from colorama import Fore, Style
+from .calculation import Calculation
+
+def colorize(text: str, color: str) -> str:
+    mapping = {
+        'red': Fore.RED,
+        'green': Fore.GREEN,
+        'yellow': Fore.YELLOW,
+        'cyan': Fore.CYAN,
+        'blue': Fore.BLUE,
+        'magenta': Fore.MAGENTA,
+        'white': Fore.WHITE,
+    }
+    return f"{mapping.get(color, Fore.WHITE)}{text}{Style.RESET_ALL}"
+
+def init_logging(cfg) -> None:
+    os.makedirs(cfg.log_dir, exist_ok=True)
+    log_path = os.path.join(cfg.log_dir, cfg.log_file)
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s [%(levelname)s] %(message)s',
+        handlers=[logging.FileHandler(log_path, encoding=cfg.encoding), logging.StreamHandler()],
+    )
+    logging.info("Logger initialized.")
+
+class Observer:
+    def on_new_calculation(self, calc: Calculation):  # pragma: no cover (simple interface)
+        pass
+
+@dataclass
+class LoggingObserver(Observer):
+    cfg: object
+    def on_new_calculation(self, calc: Calculation):
+        logging.info(f"CALC {calc.operation}({calc.a}, {calc.b}) = {calc.result} @ {calc.timestamp}")
+
+@dataclass
+class AutoSaveObserver(Observer):
+    cfg: object
+    def on_new_calculation(self, calc: Calculation):
+        # Defer to Calculator.save_history; observer just a hook here
+        try:
+            # The calculator will call save explicitly after notifying observers.
+            pass  # pragma: no cover
+        except Exception:
+            # We intentionally avoid raising from observers to not break UI.
+            pass  # pragma: no cover
