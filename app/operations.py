@@ -70,9 +70,9 @@ class OperationFactory:
     "power": Power(),
     "root": Root(),
     "modulus": Modulus(),
-    "intdivide": IntDivide(),
+    "int_divide": IntDivide(),
     "percent": Percent(),
-    "absdiff": AbsDiff(),   # <-- ADD THIS LINE
+    "abs_diff": AbsDiff(),   
 }
 
     @classmethod
