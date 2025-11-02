@@ -22,16 +22,17 @@ def test_operation_command_success(tmp_path, op, a, b, contains):
     c = Calculator(config=_cfg(tmp_path))
     cmd = OperationCommand(op, c.compute)
     out = cmd.execute([op, str(a), str(b)])
-    assert contains in out
+    assert contains in _no_ansi(out)
 
 def test_operation_command_validation_error(tmp_path):
     c = Calculator(config=_cfg(tmp_path))
     cmd = OperationCommand("add", c.compute)
     out = cmd.execute(["add", "not_a_number", "3"])
-    assert "Invalid number" in out
+    out = cmd.execute(["add", "not_a_number", "3"])
+    assert "Invalid number" in _no_ansi(out)
 
 def test_operation_command_divide_by_zero(tmp_path):
     c = Calculator(config=_cfg(tmp_path))
     cmd = OperationCommand("divide", c.compute)
     out = cmd.execute(["divide", "1", "0"])
-    assert "Division by zero" in out
+    assert "Division by zero" in _no_ansi(out)
