@@ -58,5 +58,23 @@ def validate_bounds(a: NumberLike, b: NumberLike, *_, **__) -> Tuple[Union[int, 
 
 
 # Back-compat for app.__init__ imports
-def parse_two_numbers(a: NumberLike, b: NumberLike) -> Tuple[Union[int, float], Union[int, float]]:
+def parse_two_numbers(a, b=None, *_, **__):
+    """
+    Accepts either:
+      - two positional values: parse_two_numbers(a, b)
+      - a single iterable:    parse_two_numbers([a, b]) or parse_two_numbers((a, b))
+    Returns (a_num, b_num) after validation.
+
+    Extra positional/keyword args are ignored for compatibility with callers.
+    """
+    # If only one arg was given and it's an iterable of 2+ items, unpack it
+    if b is None and isinstance(a, (list, tuple)):
+        if len(a) < 2:
+            raise ValidationError("Expected two numbers, got fewer.")
+        a, b = a[0], a[1]
+
+    if b is None:
+        # Still missing the second value
+        raise ValidationError("Expected two numbers (a, b).")
+
     return validate_bounds(a, b)

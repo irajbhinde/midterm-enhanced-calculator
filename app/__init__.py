@@ -7,7 +7,7 @@ from colorama import init as colorama_init
 import sys
 
 def main():
-    colorama_init()
+    colorama_init(autoreset=True, strip=False, convert=False)
     cfg = AppConfig.load()
     init_logging(cfg)
     calc = Calculator(config=cfg)

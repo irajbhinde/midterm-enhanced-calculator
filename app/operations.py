@@ -63,17 +63,17 @@ class AbsDiff(Operation):
 
 class OperationFactory:
     _registry = {
-        'add': Add(),
-        'subtract': Subtract(),
-        'multiply': Multiply(),
-        'divide': Divide(),
-        'power': Power(),
-        'root': Root(),
-        'modulus': Modulus(),
-        'int_divide': IntDivide(),
-        'percent': Percent(),
-        'abs_diff': AbsDiff(),
-    }
+    "add": Add(),
+    "subtract": Subtract(),
+    "multiply": Multiply(),
+    "divide": Divide(),
+    "power": Power(),
+    "root": Root(),
+    "modulus": Modulus(),
+    "intdivide": IntDivide(),
+    "percent": Percent(),
+    "absdiff": AbsDiff(),   # <-- ADD THIS LINE
+}
 
     @classmethod
     def create(cls, name: str) -> Operation:
