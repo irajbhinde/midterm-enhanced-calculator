@@ -5,14 +5,18 @@ from colorama import Fore, Style
 from .calculation import Calculation
 
 def colorize(text: str, color: str) -> str:
+    """
+    Colorize text unless NO_COLOR is set or we're running under CI.
+    This also keeps output plain during GitHub Actions tests.
+    """
+    import os
+    if os.environ.get("NO_COLOR") or os.environ.get("CI"):
+        return text
+
+    from colorama import Fore, Style
     mapping = {
-        'red': Fore.RED,
-        'green': Fore.GREEN,
-        'yellow': Fore.YELLOW,
-        'cyan': Fore.CYAN,
-        'blue': Fore.BLUE,
-        'magenta': Fore.MAGENTA,
-        'white': Fore.WHITE,
+        'red': Fore.RED, 'green': Fore.GREEN, 'yellow': Fore.YELLOW,
+        'cyan': Fore.CYAN, 'blue': Fore.BLUE, 'magenta': Fore.MAGENTA, 'white': Fore.WHITE,
     }
     return f"{mapping.get(color, Fore.WHITE)}{text}{Style.RESET_ALL}"
 

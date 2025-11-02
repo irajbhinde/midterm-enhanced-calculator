@@ -38,8 +38,11 @@ class OperationCommand(Command):
         try:
             a, b = parse_two_numbers(line_parts[1:])
             result = self._compute(self.op_name, a, b)
-            return colorize(f"{self.op_name}({a}, {b}) = {result}", "green")
+            # Normalize operands to floats so tests see 2.0, 3.0 etc.
+            return colorize(f"{self.op_name}({float(a)}, {float(b)}) = {result}", "green")
         except (ValidationError, OperationError) as e:
+            return colorize(str(e), "red")
+        except Exception as e:  # pragma: no cover (defensive)
             return colorize(str(e), "red")
 
 class UndoCommand(Command):
