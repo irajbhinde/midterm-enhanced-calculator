@@ -11,7 +11,8 @@ from .command import (
 from colorama import init as colorama_init
 
 
-def main():
+def main():  # pragma: no cover
+    """Main entry point for the Advanced Calculator REPL."""
     # Git Bash (mintty) supports ANSI; do not strip/convert.
     colorama_init(autoreset=True, strip=False, convert=False)
 
@@ -27,12 +28,12 @@ def main():
     # ---- Command registry ----
     registry = CommandRegistry()
 
-    # Dynamically register all operations from the Factory
+    # Dynamically register all operations from the Factory (Factory Pattern)
     from .operations import OperationFactory
     for op_name in OperationFactory._registry.keys():
         registry.register(op_name, OperationCommand(op_name, calc.compute))
 
-    # Utility commands
+    # ---- Utility commands ----
     registry.register("undo", UndoCommand(calc.undo))
     registry.register("redo", RedoCommand(calc.redo))
     registry.register(
@@ -76,7 +77,7 @@ def main():
             print(help_view.render())
             continue
 
-        # Dispatch to command
+        # Dispatch to command (Command Pattern)
         command = registry.get(cmd)
         if command:
             out = command.execute(parts)
