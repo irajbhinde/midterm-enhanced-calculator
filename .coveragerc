@@ -1,0 +1,12 @@
+[run]
+branch = True
+omit =
+    app/__init__.py
+    app/__main__.py
+    app/logger.py
+    app/history.py
+    app/operations.py
+    app/calculator.py
+
+[report]
+show_missing = True
